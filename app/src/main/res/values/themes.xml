@@ -4,5 +4,6 @@
     <style name="Theme.Gomuks" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:navigationBarColor">@color/primary_color_dark</item>
         <item name="android:statusBarColor">@color/primary_color_dark</item>
+        <item name="android:windowBackground">@color/primary_color_dark</item>
     </style>
 </resources>
