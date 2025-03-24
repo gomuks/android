@@ -2,6 +2,7 @@ package app.gomuks.android
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
@@ -141,6 +142,7 @@ class MainActivity : ComponentActivity() {
         val runtime = getRuntime(this)
         session.open(runtime)
         view.setSession(session)
+        updateSystemBars(resources.configuration)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
@@ -274,6 +276,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateSystemBars(newConfig)
+    }
+
     fun getServerURL(): String? {
         return sharedPref.getString(getString(R.string.server_url_key), null)
     }
@@ -283,6 +290,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             ServerInput(serverURL, username, password, error)
         }
+    }
+
+    private fun updateSystemBars(configuration: Configuration) {
+        val isNightMode = (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val systemBarIconLight = !isNightMode
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = systemBarIconLight
     }
 
     private fun parseIntentURL(overrideIntent: Intent? = null): String? {
