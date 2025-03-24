@@ -1,6 +1,5 @@
 package app.gomuks.android
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
@@ -79,7 +78,7 @@ class MainActivity : ComponentActivity() {
     internal var port: WebExtension.Port? = null
 
     private fun initSharedPref() {
-        sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+        sharedPref = getSharedPreferences(getString(R.string.preference_file_key), MODE_PRIVATE)
         prefEnc = Encryption(getString(R.string.pref_enc_key_name))
         sharedPref.getString(getString(R.string.device_id_key), null).let {
             if (it == null) {
@@ -125,7 +124,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        val statusInset = window.decorView.rootWindowInsets.systemWindowInsetTop
+        val windowInsets = ViewCompat.getRootWindowInsets(window.decorView)
+        val statusInset = windowInsets?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: 0
         val offsetEvent = MotionEvent.obtain(ev)
         offsetEvent.offsetLocation(0f, -statusInset.toFloat())
         return super.dispatchTouchEvent(offsetEvent)
@@ -154,6 +154,9 @@ class MainActivity : ComponentActivity() {
             } else {
                 v.setPadding(0, systemInsets.top, 0, 0)
             }
+
+            window.decorView.setBackgroundColor(getColor(R.color.header_color))
+
             insets
         }
 
