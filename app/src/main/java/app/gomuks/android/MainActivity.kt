@@ -355,7 +355,7 @@ class MainActivity : ComponentActivity() {
         val systemBarIconLight = !isNightMode
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
 
-        window.decorView.setBackgroundColor(getColor(R.color.header_color))
+        window.decorView.setBackgroundColor(getColor(R.color.systembars_color))
         windowInsetsController.isAppearanceLightStatusBars = systemBarIconLight
         windowInsetsController.isAppearanceLightNavigationBars = systemBarIconLight
     }
