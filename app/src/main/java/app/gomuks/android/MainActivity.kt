@@ -5,9 +5,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Base64
 import android.util.Log
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -30,6 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,6 +43,7 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
 import java.io.File
 import java.util.UUID
+import androidx.core.net.toUri
 
 
 class MainActivity : ComponentActivity() {
@@ -120,15 +124,40 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        val statusInset = window.decorView.rootWindowInsets.systemWindowInsetTop
+        val offsetEvent = MotionEvent.obtain(ev)
+        offsetEvent.offsetLocation(0f, -statusInset.toFloat())
+        return super.dispatchTouchEvent(offsetEvent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initSharedPref()
         createNotificationChannels(this)
         view = GeckoView(this)
+        setContentView(view)
         session = GeckoSession()
         val runtime = getRuntime(this)
         session.open(runtime)
         view.setSession(session)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val systemInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            WindowInsetsCompat.Type.statusBars()
+
+            if (imeInsets.bottom > 0) {
+                v.setPadding(0, systemInsets.top, 0, imeInsets.bottom)
+            } else {
+                v.setPadding(0, systemInsets.top, 0, 0)
+            }
+            insets
+        }
+
+//        window.statusBarColor = getColor(android.R.color.black)
 
         File(cacheDir, "upload").mkdirs()
 
@@ -267,7 +296,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             if (targetURI?.scheme == "matrix") {
-                serverURL = Uri.parse(serverURL)
+                serverURL = serverURL.toUri()
                     .buildUpon()
                     .encodedFragment("/uri/${Uri.encode(targetURI.toString())}")
                     .build()
