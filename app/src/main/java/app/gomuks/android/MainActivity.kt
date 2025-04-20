@@ -3,6 +3,7 @@ package app.gomuks.android
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
@@ -30,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -129,6 +131,7 @@ class MainActivity : ComponentActivity() {
         val runtime = getRuntime(this)
         session.open(runtime)
         view.setSession(session)
+        updateSystemBarsColours(resources.configuration)
 
         File(cacheDir, "upload").mkdirs()
 
@@ -242,6 +245,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateSystemBarsColours(newConfig)
+    }
+
     fun getServerURL(): String? {
         return sharedPref.getString(getString(R.string.server_url_key), null)
     }
@@ -340,5 +348,15 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    private fun updateSystemBarsColours(configuration: Configuration) {
+        val isNightMode = configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        val systemBarIconLight = !isNightMode
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+
+        window.decorView.setBackgroundColor(getColor(R.color.systembars_color))
+        windowInsetsController.isAppearanceLightStatusBars = systemBarIconLight
+        windowInsetsController.isAppearanceLightNavigationBars = systemBarIconLight
     }
 }
