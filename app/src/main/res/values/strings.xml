@@ -20,6 +20,7 @@
 
     <string name="notification_channel_silent">Silent notifications</string>
     <string name="notification_channel_noisy">Noisy notifications</string>
+    <string name="notification_channel_download">File download notifications</string>
 
     <!-- BasicGeckoViewPrompt strings -->
     <string name="username">Username</string>
