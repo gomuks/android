@@ -5,11 +5,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Base64
 import android.util.Log
-import android.view.MotionEvent
-import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -68,7 +65,8 @@ class MainActivity : ComponentActivity() {
     private val navigation = NavigationDelegate(this)
     private val messageDelegate = MessageDelegate(this)
     internal val portDelegate = PortDelegate(this)
-    private val promptDelegate = GeckoPrompts(this)
+    internal val promptDelegate = GeckoPrompts(this)
+    private val permissionDelegate = PermissionDelegate(this)
 
     private lateinit var view: GeckoView
     private lateinit var session: GeckoSession
@@ -151,6 +149,7 @@ class MainActivity : ComponentActivity() {
         }
         session.promptDelegate = promptDelegate
         session.navigationDelegate = navigation
+        session.permissionDelegate = permissionDelegate
 
         val sessWebExtController = session.webExtensionController
         runtime.webExtensionController
@@ -238,6 +237,17 @@ class MainActivity : ComponentActivity() {
         Log.d(LOGTAG, "onSaveInstanceState $sessionState")
         outState.putParcelable(BUNDLE_KEY, sessionState)
         super.onSaveInstanceState(outState)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String?>,
+        grantResults: IntArray,
+        deviceId: Int
+    ) {
+        if (requestCode == PermissionDelegate.PERMISSION_REQUEST_CODE) {
+            permissionDelegate.onRequestPermissionsResult(permissions, grantResults)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

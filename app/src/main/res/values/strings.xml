@@ -39,4 +39,11 @@
     <string name="repost_confirm_title">Are you sure?</string>
     <string name="repost_confirm_resend">Resend</string>
     <string name="repost_confirm_cancel">Cancel</string>
+    <string name="media_front_camera">Front camera</string>
+    <string name="media_back_camera">Back camera</string>
+    <string name="media_microphone">Microphone</string>
+    <string name="media_other">Unknown source</string>
+    <string name="request_video">Share video with \"%1$s\"</string>
+    <string name="request_audio">Share audio with \"%1$s\"</string>
+    <string name="request_media">Share video and audio with \"%1$s\"</string>
 </resources>
