@@ -2,11 +2,12 @@ package app.gomuks.android
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.util.Log
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebRequestError
+import androidx.core.net.toUri
+import org.mozilla.geckoview.AllowOrDeny
 
 class NavigationDelegate(private val activity: MainActivity) : GeckoSession.NavigationDelegate {
     companion object {
@@ -33,7 +34,7 @@ class NavigationDelegate(private val activity: MainActivity) : GeckoSession.Navi
     }
 
     override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        val intent = Intent(Intent.ACTION_VIEW, uri.toUri())
         if (activity.packageManager.resolveActivity(intent, PackageManager.MATCH_ALL) != null) {
             activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.url_app_chooser_title)))
             Log.d(LOGTAG, "onNewSession: $uri - activity chooser started")

@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
     internal val portDelegate = PortDelegate(this)
     internal val promptDelegate = GeckoPrompts(this)
     private val permissionDelegate = PermissionDelegate(this)
+    private val contentDelegate = ContentDelegate(this)
 
     private lateinit var view: GeckoView
     private lateinit var session: GeckoSession
@@ -150,6 +151,7 @@ class MainActivity : ComponentActivity() {
         session.promptDelegate = promptDelegate
         session.navigationDelegate = navigation
         session.permissionDelegate = permissionDelegate
+        session.contentDelegate = contentDelegate
 
         val sessWebExtController = session.webExtensionController
         runtime.webExtensionController

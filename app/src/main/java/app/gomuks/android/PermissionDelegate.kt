@@ -12,6 +12,7 @@ import androidx.core.net.toUri
 
 class PermissionDelegate(private val activity: MainActivity) : GeckoSession.PermissionDelegate {
     companion object {
+        private const val LOGTAG = "Gomuks/PermissionDelegate"
         const val PERMISSION_REQUEST_CODE: Int = 1
     }
     private var mCallback: GeckoSession.PermissionDelegate.Callback? = null
