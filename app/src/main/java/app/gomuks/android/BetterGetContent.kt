@@ -18,7 +18,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.min
 
-class BetterGetContent(private val activity: ComponentActivity) : ActivityResultContract<BetterGetContent.Params, Result?>() {
+class BetterGetContent() : ActivityResultContract<BetterGetContent.Params, Result?>() {
     companion object {
         private const val LOGTAG = "Gomuks/BetterGetContent"
     }

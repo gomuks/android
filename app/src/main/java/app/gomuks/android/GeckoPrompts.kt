@@ -13,6 +13,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import androidx.core.net.toUri
 
 class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewPrompt(activity) {
     companion object {
@@ -22,7 +23,7 @@ class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewProm
     private var currentFileResponse: GeckoResult<PromptResponse>? = null
     private var currentFilePrompt: FilePrompt? = null
 
-    private val filePrompt = activity.registerForActivityResult(BetterGetContent(activity)) {
+    private val filePrompt = activity.registerForActivityResult(BetterGetContent()) {
         onFileCallbackResult(it)
     }
 
@@ -43,7 +44,7 @@ class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewProm
         } catch (e: IOException) {
             Log.w(LOGTAG, "Could not convert uri to file uri", e)
         }
-        return Uri.parse("file:///" + temporalFile.absolutePath)
+        return ("file:///" + temporalFile.absolutePath).toUri()
     }
 
     private fun Uri.getFileName(): String {
