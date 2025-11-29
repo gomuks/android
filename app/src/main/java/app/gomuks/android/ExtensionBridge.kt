@@ -2,7 +2,6 @@ package app.gomuks.android
 
 import android.util.Base64
 import android.util.Log
-import androidx.core.view.setPadding
 import org.json.JSONObject
 import org.mozilla.geckoview.WebExtension
 import kotlin.time.Duration.Companion.hours
@@ -92,7 +91,7 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
                 JSONObject(
                     mapOf(
                         "type" to "auth",
-                        "authorization" to "Basic ${basicAuth}",
+                        "authorization" to "Basic $basicAuth",
                     )
                 )
             )

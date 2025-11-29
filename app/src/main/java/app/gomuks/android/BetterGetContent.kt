@@ -40,7 +40,7 @@ class BetterGetContent() : ActivityResultContract<BetterGetContent.Params, Resul
                     if (slash < 0) {
                         slash = len
                     }
-                    val newType = normalizedType.substring(0, slash)
+                    val newType = normalizedType.take(slash)
                     val newSubtype: String =
                         normalizedType.substring(min(slash + 1, len))
                     if (mimeType == null) {

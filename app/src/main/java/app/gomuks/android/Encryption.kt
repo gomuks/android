@@ -4,7 +4,6 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.security.KeyStore
-import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -59,7 +58,7 @@ class Encryption {
     }
 
     fun encrypt(input: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance(Companion.AES_MODE)
+        val cipher = Cipher.getInstance(AES_MODE)
         cipher.init(Cipher.ENCRYPT_MODE, key)
         val encrypted = cipher.doFinal(input)
         return cipher.iv + encrypted
@@ -70,7 +69,7 @@ class Encryption {
     }
 
     fun decrypt(encrypted: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance(Companion.AES_MODE)
+        val cipher = Cipher.getInstance(AES_MODE)
         val iv = encrypted.sliceArray(0 until GCM_IV_SIZE)
         val actualEncrypted = encrypted.sliceArray(GCM_IV_SIZE until encrypted.size)
         cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_SIZE, iv))

@@ -3,6 +3,7 @@ package app.gomuks.android
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
+import androidx.core.content.edit
 
 internal fun getExistingPushEncryptionKey(
     context: Context,
@@ -33,12 +34,11 @@ private fun getPushEncryptionKey(
             return null
         }
         unencKey = Encryption.generatePlainKey()
-        with(sharedPref.edit()) {
+        sharedPref.edit {
             putString(
                 context.getString(R.string.push_enc_key),
                 Base64.encodeToString(prefEnc.encrypt(unencKey), Base64.NO_WRAP)
             )
-            apply()
         }
         return unencKey
     } else {

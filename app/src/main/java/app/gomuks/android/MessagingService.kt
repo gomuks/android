@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import androidx.core.content.edit
 
 class MessagingService : FirebaseMessagingService() {
     companion object {
@@ -28,9 +29,8 @@ class MessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         val sharedPref =
             getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
-        with(sharedPref.edit()) {
+        sharedPref.edit {
             putString(getString(R.string.push_token_key), token)
-            apply()
         }
         Log.d(LOGTAG, "Got new push token: $token")
         CoroutineScope(Dispatchers.IO).launch {

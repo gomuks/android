@@ -1,6 +1,5 @@
 package app.gomuks.android
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
@@ -43,6 +42,8 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
 import java.io.File
 import java.util.UUID
+import androidx.core.content.edit
+import androidx.core.net.toUri
 
 
 class MainActivity : ComponentActivity() {
@@ -80,14 +81,13 @@ class MainActivity : ComponentActivity() {
     internal var port: WebExtension.Port? = null
 
     private fun initSharedPref() {
-        sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+        sharedPref = getSharedPreferences(getString(R.string.preference_file_key), MODE_PRIVATE)
         prefEnc = Encryption(getString(R.string.pref_enc_key_name))
         sharedPref.getString(getString(R.string.device_id_key), null).let {
             if (it == null) {
                 deviceID = UUID.randomUUID()
-                with(sharedPref.edit()) {
+                sharedPref.edit {
                     putString(getString(R.string.device_id_key), deviceID.toString())
-                    apply()
                 }
                 Log.d(LOGTAG, "Generated new device ID $deviceID")
             } else {
@@ -102,11 +102,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setCredentials(serverURL: String, username: String, password: String) {
-        with(sharedPref.edit()) {
+        sharedPref.edit {
             putString(getString(R.string.server_url_key), serverURL)
             putString(getString(R.string.username_key), username)
             putString(getString(R.string.password_key), prefEnc.encrypt(password))
-            apply()
         }
     }
 
@@ -295,7 +294,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             if (targetURI?.scheme == "matrix") {
-                serverURL = Uri.parse(serverURL)
+                serverURL = serverURL.toUri()
                     .buildUpon()
                     .encodedFragment("/uri/${Uri.encode(targetURI.toString())}")
                     .build()

@@ -7,7 +7,6 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebRequestError
 import androidx.core.net.toUri
-import org.mozilla.geckoview.AllowOrDeny
 
 class NavigationDelegate(private val activity: MainActivity) : GeckoSession.NavigationDelegate {
     companion object {
