@@ -135,9 +135,9 @@ class BetterGetContent(private val activity: ComponentActivity) : ActivityResult
             )
         }
 
-        val photoFile = currentPhotoTempFile ?: File(activity.cacheDir, "camera_output.jpg")
-        val videoFile = currentVideoTempFile ?: File(activity.cacheDir, "camera_output.mp4")
-        if (intent == null && photoFile.exists() && videoFile.exists()) {
+        val photoFile = currentPhotoTempFile
+        val videoFile = currentVideoTempFile
+        if (photoFile != null && videoFile != null) {
             val currentTS = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             currentPhotoTempFile = null
             currentVideoTempFile = null
