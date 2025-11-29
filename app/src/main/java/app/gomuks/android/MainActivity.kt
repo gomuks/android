@@ -190,7 +190,12 @@ class MainActivity : ComponentActivity() {
                 finish()
             }
         })
-        val parcel = savedInstanceState?.getParcelable(BUNDLE_KEY, GeckoSession.SessionState::class.java)
+        val parcel = try {
+            savedInstanceState?.getParcelable(BUNDLE_KEY, GeckoSession.SessionState::class.java)
+        } catch (t: Throwable) {
+            Log.e(LOGTAG, "Failed to restore state: $t")
+            null
+        }
         if (parcel != null) {
             session.restoreState(parcel)
             setContentView(view)
