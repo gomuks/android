@@ -97,8 +97,8 @@ class PermissionDelegate(private val activity: MainActivity) : GeckoSession.Perm
 
         val serverURL = activity.getServerURL()
         if (serverURL != null && uri.startsWith(serverURL)) {
-            Log.d(LOGTAG, "Auto-accepting media permissions ${video?.get(0)?.id} ${audio?.get(0)?.id}")
-            callback.grant(video?.get(0), audio?.get(0))
+            Log.d(LOGTAG, "Auto-accepting media permissions ${video?.firstOrNull()?.id} ${audio?.firstOrNull()?.id}")
+            callback.grant(video?.firstOrNull(), audio?.firstOrNull())
             return
         }
 
