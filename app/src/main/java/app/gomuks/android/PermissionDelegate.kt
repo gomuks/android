@@ -2,6 +2,7 @@ package app.gomuks.android
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import org.mozilla.geckoview.GeckoSession
@@ -90,6 +91,14 @@ class PermissionDelegate(private val activity: MainActivity) : GeckoSession.Perm
             ) != PackageManager.PERMISSION_GRANTED))
         ) {
             callback.reject()
+            return
+        }
+        Log.i(LOGTAG, "$uri requested media permissions")
+
+        val serverURL = activity.getServerURL()
+        if (serverURL != null && uri.startsWith(serverURL)) {
+            Log.d(LOGTAG, "Auto-accepting media permissions ${video?.get(0)?.id} ${audio?.get(0)?.id}")
+            callback.grant(video?.get(0), audio?.get(0))
             return
         }
 
