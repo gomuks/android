@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -17,7 +18,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.min
 
-class BetterGetContent : ActivityResultContract<BetterGetContent.Params, Result?>() {
+class BetterGetContent(private val activity: ComponentActivity) : ActivityResultContract<BetterGetContent.Params, Result?>() {
     companion object {
         private const val LOGTAG = "Gomuks/BetterGetContent"
     }
@@ -126,12 +127,17 @@ class BetterGetContent : ActivityResultContract<BetterGetContent.Params, Result?
         if (resultCode != Activity.RESULT_OK) {
             Log.d(LOGTAG, "Non-OK result $resultCode for file picking")
             return null
+        } else if (intent != null && (intent.data != null || intent.clipData != null)) {
+            Log.d(LOGTAG, "Using result URI ${intent.data} / ${intent.clipData?.itemCount}")
+            return Result(
+                uri = intent.data,
+                clip = intent.clipData,
+            )
         }
 
-        val res: Result
-        val photoFile = currentPhotoTempFile
-        val videoFile = currentVideoTempFile
-        if (intent == null && photoFile != null && videoFile != null) {
+        val photoFile = currentPhotoTempFile ?: File(activity.cacheDir, "camera_output.jpg")
+        val videoFile = currentVideoTempFile ?: File(activity.cacheDir, "camera_output.mp4")
+        if (intent == null && photoFile.exists() && videoFile.exists()) {
             val currentTS = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             currentPhotoTempFile = null
             currentVideoTempFile = null
@@ -149,17 +155,9 @@ class BetterGetContent : ActivityResultContract<BetterGetContent.Params, Result?
                 return null
             }
             Log.d(LOGTAG, "Using photo/video URI ${destFile.path}")
-            res = Result(uri = destFile.toUri(), clip = null)
-        } else if (intent != null && (intent.data != null || intent.clipData != null)) {
-            Log.d(LOGTAG, "Using result URI ${intent.data} / ${intent.clipData?.itemCount}")
-            res = Result(
-                uri = intent.data,
-                clip = intent.clipData,
-            )
-        } else {
-            Log.w(LOGTAG, "No temp files or result found")
-            return null
+            return Result(uri = destFile.toUri(), clip = null)
         }
-        return res
+        Log.w(LOGTAG, "No temp files or result found")
+        return null
     }
 }

@@ -22,7 +22,7 @@ class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewProm
     private var currentFileResponse: GeckoResult<PromptResponse>? = null
     private var currentFilePrompt: FilePrompt? = null
 
-    private val filePrompt = activity.registerForActivityResult(BetterGetContent()) {
+    private val filePrompt = activity.registerForActivityResult(BetterGetContent(activity)) {
         onFileCallbackResult(it)
     }
 
