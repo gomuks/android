@@ -6,10 +6,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Audio recording for voice messages, camera for calls -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- TODO the camera on the file picker breaks if we say we use the camera permission,
+    but don't request it. Just don't advertise it at all now so we can actually use the camera -->
+    <!--<uses-permission android:name="android.permission.CAMERA" />
     <uses-feature
         android:name="android.hardware.camera"
-        android:required="false" />
+        android:required="false" />-->
     <!-- API 36 may require this for connecting to LAN IPs, so add it just in case.
     It's never requested, but this lets the user allow it in settings if necessary.-->
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
