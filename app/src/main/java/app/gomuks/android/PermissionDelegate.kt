@@ -43,30 +43,23 @@ class PermissionDelegate(private val activity: MainActivity) : GeckoSession.Perm
     }
 
     private fun normalizeMediaName(sources: Array<GeckoSession.PermissionDelegate.MediaSource>?): Array<String>? {
-        if (sources == null) {
-            return null
-        }
-
-        val res = arrayOfNulls<String>(sources.size)
-        for (i in sources.indices) {
-            val mediaSource = sources[i].source
-            val name = sources[i].name
+        return sources?.map { source ->
+            val mediaSource = source.source
+            val name = source.name
             if (GeckoSession.PermissionDelegate.MediaSource.SOURCE_CAMERA == mediaSource) {
                 if (name!!.lowercase(Locale.ROOT).contains("front")) {
-                    res[i] = activity.getString(R.string.media_front_camera)
+                    activity.getString(R.string.media_front_camera)
                 } else {
-                    res[i] = activity.getString(R.string.media_back_camera)
+                    activity.getString(R.string.media_back_camera)
                 }
-            } else if (name != null && !name.isEmpty()) {
-                res[i] = name
+            } else if (name != null && name.isNotEmpty()) {
+                name
             } else if (GeckoSession.PermissionDelegate.MediaSource.SOURCE_MICROPHONE == mediaSource) {
-                res[i] = activity.getString(R.string.media_microphone)
+                activity.getString(R.string.media_microphone)
             } else {
-                res[i] = activity.getString(R.string.media_other)
+                activity.getString(R.string.media_other)
             }
-        }
-
-        return res as Array<String>
+        }?.toTypedArray()
     }
 
     override fun onMediaPermissionRequest(
