@@ -1,5 +1,8 @@
 package app.gomuks.android
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
@@ -38,6 +41,7 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
                     Log.i(LOGTAG, "Web client loaded")
                     sendAuthCredentials(port)
                     activity.resetPadding()
+                    activity.onReady()
                 }
 
                 "auth_fail" -> {
@@ -116,5 +120,47 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
             )
         )
         Log.i(LOGTAG, "Sent push registration with token $token")
+    }
+
+    private fun queryContent(uri: Uri): Pair<String, Int> {
+        val cursor = activity.contentResolver.query(uri, null, null, null, null)
+            ?: throw Exception("Failed to query content URI")
+        cursor.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+            it.moveToFirst()
+            return Pair(it.getString(nameIndex), it.getInt(sizeIndex))
+        }
+    }
+
+    fun share(port: WebExtension.Port, intent: Intent) {
+        if (intent.action != Intent.ACTION_SEND) {
+            return
+        }
+        val uri = intent.clipData?.getItemAt(0)?.uri ?: return
+        if (uri.scheme != "content") {
+            Log.w(LOGTAG, "Ignoring non-content URI $uri")
+            return
+        }
+        val (name, size) = queryContent(uri)
+        val fileBytes = activity.contentResolver.openInputStream(uri).use { it?.readBytes() }
+        if (fileBytes == null) {
+            Log.w(LOGTAG, "Failed to read content URI $uri")
+            return
+        }
+        val encodedFile = Base64.encodeToString(fileBytes, Base64.NO_WRAP)
+        val mimeType = activity.contentResolver.getType(uri)
+        port.postMessage(
+            JSONObject(
+                mapOf(
+                    "type" to "share",
+                    "payload" to encodedFile,
+                    "name" to name,
+                    "size" to size,
+                    "mime_type" to mimeType,
+                )
+            )
+        )
+        Log.d(LOGTAG, "Sent share intent for $uri ($name, $size, $mimeType)")
     }
 }

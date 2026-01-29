@@ -95,17 +95,11 @@
                     android:fragmentPrefix="#/"
                     tools:targetApi="35" />
             </intent-filter>
-
-            <!--
-            TODO add share support
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <data android:mimeType="*/*" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.OPENABLE" />
             </intent-filter>
-            -->
         </activity>
     </application>
 

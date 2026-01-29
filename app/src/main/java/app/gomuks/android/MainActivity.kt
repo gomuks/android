@@ -126,6 +126,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(LOGTAG, "Intent on create: ${intent.action} ${intent.data}")
         initSharedPref()
         createNotificationChannels(this)
         view = GeckoView(this)
@@ -257,11 +258,31 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
+        Log.d(LOGTAG, "onNewIntent ${intent.action} ${intent.data}")
         super.onNewIntent(intent)
         if (this::session.isInitialized) {
             parseIntentURL(intent)?.let {
                 session.loadUri(it)
             }
+            handleShareIntent(intent)
+        }
+    }
+
+    fun onReady() {
+        if (intent.action == Intent.ACTION_SEND) {
+            handleShareIntent(intent)
+            intent.action = ""
+        }
+    }
+
+    private fun handleShareIntent(intent: Intent) {
+        if (intent.action != Intent.ACTION_SEND) {
+            return
+        }
+        if (port != null) {
+            portDelegate.share(port!!, intent)
+        } else {
+            Log.w(LOGTAG, "Port not initialized, ignoring share intent")
         }
     }
 
@@ -309,17 +330,21 @@ class MainActivity : ComponentActivity() {
             }
         }
         if (overrideIntent != null) {
-            Log.w(
-                LOGTAG,
-                "No intent URL found ${overrideIntent.action} ${overrideIntent.data}"
-            )
+            if (intent.action == Intent.ACTION_VIEW) {
+                Log.w(
+                    LOGTAG,
+                    "No intent URL found ${overrideIntent.action} ${overrideIntent.data}"
+                )
+            }
             return null
         }
         return serverURL
     }
 
     private fun loadWeb(): Boolean {
-        session.loadUri(parseIntentURL() ?: return false)
+        val mainPageURL = parseIntentURL() ?: return false
+        Log.d(LOGTAG, "Loading main page $mainPageURL")
+        session.loadUri(mainPageURL)
         setContentView(view)
         return true
     }
