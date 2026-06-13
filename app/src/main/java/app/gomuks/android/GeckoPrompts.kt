@@ -1,10 +1,14 @@
 package app.gomuks.android
 
+import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.FilePrompt
@@ -26,6 +30,12 @@ class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewProm
     private val filePrompt = activity.registerForActivityResult(BetterGetContent()) {
         onFileCallbackResult(it)
     }
+
+    private val requestCameraPermission =
+        activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            Log.d(LOGTAG, "Camera permission result for file picker: $granted")
+            launchFilePrompt()
+        }
 
     private fun Uri.toFileUri(): Uri {
         if (this.scheme == "file") {
@@ -95,10 +105,21 @@ class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewProm
     ): GeckoResult<PromptResponse> {
         Log.d(LOGTAG, "onFilePrompt")
         val res = GeckoResult<PromptResponse>()
+        currentFileResponse = res
+        currentFilePrompt = prompt
 
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestCameraPermission.launch(Manifest.permission.CAMERA)
+        } else {
+            launchFilePrompt()
+        }
+
+        return res
+    }
+
+    private fun launchFilePrompt() {
+        val prompt = currentFilePrompt ?: return
         try {
-            currentFileResponse = res
-            currentFilePrompt = prompt
             filePrompt.launch(
                 BetterGetContent.Params(
                     mimeTypes = prompt.mimeTypes,
@@ -107,9 +128,9 @@ class GeckoPrompts(private val activity: ComponentActivity) : BasicGeckoViewProm
             )
         } catch (e: ActivityNotFoundException) {
             Log.e(LOGTAG, "Cannot launch activity", e)
-            return GeckoResult.fromValue(prompt.dismiss())
+            currentFileResponse?.complete(prompt.dismiss())
+            currentFileResponse = null
+            currentFilePrompt = null
         }
-
-        return res
     }
 }

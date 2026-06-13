@@ -1,13 +1,16 @@
 package app.gomuks.android
 
+import android.Manifest
 import android.app.Activity
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import app.gomuks.android.BetterGetContent.Result
@@ -96,29 +99,40 @@ class BetterGetContent() : ActivityResultContract<BetterGetContent.Params, Resul
             }
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, input.multiple)
         }
-        val imageURI = getPhotoTempURI(context)
-        val videoURI = getVideoTempURI(context)
-        val takePicture = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, imageURI)
-        }
-        val takeVideo = Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, videoURI)
-        }
         val pm = context.packageManager
-        pm.queryIntentActivities(takePicture, 0).forEach {
-            Log.d(LOGTAG, "Found camera activity ${it.activityInfo.packageName}.${it.activityInfo.name}")
-            context.grantUriPermission(it.activityInfo.packageName, imageURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        }
-        pm.queryIntentActivities(takeVideo, 0).forEach {
-            Log.d(LOGTAG, "Found video activity ${it.activityInfo.packageName}.${it.activityInfo.name}")
-            context.grantUriPermission(it.activityInfo.packageName, videoURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        val initialIntents = mutableListOf(getContent)
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            val imageURI = getPhotoTempURI(context)
+            val videoURI = getVideoTempURI(context)
+            // Grant write access to the output URI explicitly on the intent. The implicit grant
+            // that the capture actions used to perform is being removed in Android 18.
+            val takePicture = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, imageURI)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+            val takeVideo = Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, videoURI)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+            pm.queryIntentActivities(takePicture, 0).forEach {
+                Log.d(LOGTAG, "Found camera activity ${it.activityInfo.packageName}.${it.activityInfo.name}")
+                context.grantUriPermission(it.activityInfo.packageName, imageURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+            pm.queryIntentActivities(takeVideo, 0).forEach {
+                Log.d(LOGTAG, "Found video activity ${it.activityInfo.packageName}.${it.activityInfo.name}")
+                context.grantUriPermission(it.activityInfo.packageName, videoURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+            initialIntents.add(takePicture)
+            initialIntents.add(takeVideo)
+        } else {
+            Log.d(LOGTAG, "Camera permission not granted, omitting camera options from file picker")
         }
         pm.queryIntentActivities(getContent, 0).forEach {
             Log.d(LOGTAG, "Found content activity ${it.activityInfo.packageName}.${it.activityInfo.name}")
         }
 
         return Intent.createChooser(getContent, "Select source").apply {
-            putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(getContent, takePicture, takeVideo))
+            putExtra(Intent.EXTRA_INITIAL_INTENTS, initialIntents.toTypedArray())
         }
     }
 

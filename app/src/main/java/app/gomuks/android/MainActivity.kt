@@ -252,6 +252,7 @@ class MainActivity : ComponentActivity() {
         grantResults: IntArray,
         deviceId: Int
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
         if (requestCode == PermissionDelegate.PERMISSION_REQUEST_CODE) {
             permissionDelegate.onRequestPermissionsResult(permissions, grantResults)
         }
