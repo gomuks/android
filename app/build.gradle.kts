@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "app.gomuks.android"
     compileSdk = 37
+    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "app.gomuks.android"
