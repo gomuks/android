@@ -12,6 +12,7 @@
         android:required="false" />
     <!-- API 36 may require this for connecting to LAN IPs, so add it just in case.
     It's never requested, but this lets the user allow it in settings if necessary.-->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
         android:usesPermissionFlags="neverForLocation" />
 

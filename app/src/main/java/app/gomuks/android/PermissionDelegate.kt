@@ -23,11 +23,13 @@ class PermissionDelegate(private val activity: MainActivity) : GeckoSession.Perm
         mCallback = null
         for (result in grantResults) {
             if (result != PackageManager.PERMISSION_GRANTED) {
+                Log.d(LOGTAG, "onRequestPermissionsResult rejected ${permissions.joinToString(", ")} $result")
                 // At least one permission was not granted.
                 cb.reject()
                 return
             }
         }
+        Log.d(LOGTAG, "onRequestPermissionsResult granted ${permissions.joinToString(", ")}")
         cb.grant()
     }
 
@@ -38,6 +40,7 @@ class PermissionDelegate(private val activity: MainActivity) : GeckoSession.Perm
     ) {
         mCallback = callback
         if (permissions != null) {
+            Log.d(LOGTAG, "onAndroidPermissionsRequest ${permissions.joinToString(", ")}")
             ActivityCompat.requestPermissions(activity, permissions, PERMISSION_REQUEST_CODE)
         }
     }
