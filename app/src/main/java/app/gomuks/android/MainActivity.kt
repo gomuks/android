@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
     private val permissionDelegate = PermissionDelegate(this)
     private val contentDelegate = ContentDelegate(this)
 
-    private lateinit var view: GeckoView
+    internal lateinit var view: GeckoView
     private lateinit var session: GeckoSession
     private var sessionState: GeckoSession.SessionState? = null
 

@@ -2,9 +2,11 @@ package app.gomuks.android
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import org.json.JSONObject
 import org.mozilla.geckoview.WebExtension
 import kotlin.time.Duration.Companion.hours
@@ -67,6 +69,30 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
                     } else {
                         Log.d(LOGTAG, "Not sending push registration: last registration was recent")
                     }
+                }
+
+                "haptic_feedback" -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        return
+                    }
+                    val feedbackConstant = when (message.getString("name")) {
+                        "LONG_PRESS" -> HapticFeedbackConstants.LONG_PRESS
+                        "TEXT_HANDLE_MOVE" -> HapticFeedbackConstants.TEXT_HANDLE_MOVE
+                        "GESTURE_START" -> HapticFeedbackConstants.GESTURE_START
+                        "GESTURE_END" -> HapticFeedbackConstants.GESTURE_END
+                        "CONFIRM" -> HapticFeedbackConstants.CONFIRM
+                        "REJECT" -> HapticFeedbackConstants.REJECT
+                        "TOGGLE_ON" -> HapticFeedbackConstants.TOGGLE_ON
+                        "TOGGLE_OFF" -> HapticFeedbackConstants.TOGGLE_OFF
+                        "GESTURE_THRESHOLD_ACTIVATE" -> HapticFeedbackConstants.GESTURE_THRESHOLD_ACTIVATE
+                        "GESTURE_THRESHOLD_DEACTIVATE" -> HapticFeedbackConstants.GESTURE_THRESHOLD_DEACTIVATE
+                        "DRAG_START" -> HapticFeedbackConstants.DRAG_START
+                        "SEGMENT_TICK" -> HapticFeedbackConstants.SEGMENT_TICK
+                        "SEGMENT_FREQUENT_TICK" -> HapticFeedbackConstants.SEGMENT_FREQUENT_TICK
+                        else -> HapticFeedbackConstants.NO_HAPTICS
+                    }
+                    Log.i(LOGTAG, "Vibrate $feedbackConstant")
+                    activity.view.performHapticFeedback(feedbackConstant)
                 }
 
                 else -> Log.d(LOGTAG, "Unknown web command $evtType")
