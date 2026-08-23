@@ -134,7 +134,8 @@ class MainActivity : ComponentActivity() {
         val runtime = getRuntime(this)
         session.open(runtime)
         view.setSession(session)
-        addSystemInsets()
+        WindowCompat.enableEdgeToEdge(window)
+        setupKeyboardInset()
 
         File(cacheDir, "upload").mkdirs()
 
@@ -298,8 +299,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun addSystemInsets() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+    private fun setupKeyboardInset() {
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
             v.setPadding(0, 0, 0, imeInsets.bottom)
