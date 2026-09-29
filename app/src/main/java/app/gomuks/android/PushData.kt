@@ -28,6 +28,8 @@ data class PushMessage(
     val sender: PushUser,
     val self: PushUser,
 
+    @SerialName("is_dm") val isDM: Boolean = false,
+
     val text: String,
     val image: String? = null,
     val mention: Boolean = false,

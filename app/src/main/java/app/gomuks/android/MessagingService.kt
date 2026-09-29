@@ -85,9 +85,8 @@ class MessagingService : FirebaseMessagingService() {
         val messagingStyle = (manager.activeNotifications.lastOrNull { it.id == notifID }?.let {
             MessagingStyle.extractMessagingStyleFromNotification(it.notification)
         } ?: MessagingStyle(pushUserToPerson(data.self)))
-            .setConversationTitle(
-                if (data.roomName != data.sender.name) data.roomName else null
-            )
+            .setConversationTitle(if (!data.isDM) data.roomName else null)
+            .setGroupConversation(!data.isDM)
             .addMessage(MessagingStyle.Message(data.text, data.timestamp, sender))
         val channelID = if (data.sound) {
             NOISY_NOTIFICATION_CHANNEL_ID
