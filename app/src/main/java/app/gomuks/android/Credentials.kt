@@ -18,3 +18,10 @@ internal fun readCredentials(context: Context): Triple<String, String, String>? 
         null
     }
 }
+
+internal fun getServerURL(context: Context): String? {
+    val prefs = context.getSharedPreferences(
+        context.getString(R.string.preference_file_key), Context.MODE_PRIVATE,
+    )
+    return prefs.getString(context.getString(R.string.server_url_key), null)
+}

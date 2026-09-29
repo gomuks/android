@@ -105,9 +105,7 @@ class ReplyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
     private fun sendMessage(roomID: String, text: String, txnID: String, startTS: String): String? {
         val credentials = readCredentials(applicationContext) ?: return "Missing credentials"
         val (serverURL, username, password) = credentials
-        val baseURL = serverURL.toHttpUrl()
-        val reqURL = baseURL.newBuilder()
-            .encodedPath(baseURL.encodedPath.trimEnd('/') + "/")
+        val reqURL = serverURLBuilder(serverURL)
             .addPathSegments("_gomuks/exec/send_message")
             .addQueryParameter("txn_id", txnID)
             .addQueryParameter("start_ts", startTS)

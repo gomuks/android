@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.MessagingStyle
@@ -21,6 +22,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import androidx.core.content.edit
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 
 class MessagingService : FirebaseMessagingService() {
     companion object {
@@ -65,27 +69,37 @@ class MessagingService : FirebaseMessagingService() {
                 }
             }
         }
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        val avatars = NotificationAvatars(this, getServerURL(this), data.imageAuth, data.imageAuthExpiry)
         data.messages?.forEach {
-            showMessageNotification(it)
+            showMessageNotification(it, avatars)
         }
     }
 
-    private fun pushUserToPerson(data: PushUser): Person {
-        // TODO include avatar
+    private fun pushUserToPerson(data: PushUser, avatars: NotificationAvatars): Person {
         return Person.Builder()
             .setKey(data.id)
             .setName(data.name)
             .setUri("matrix:u/${data.id.substring(1)}")
+            .setIcon(avatars.load(data.avatar)?.let { IconCompat.createWithBitmap(it) })
             .build()
     }
 
-    private fun showMessageNotification(data: PushMessage) {
-        val sender = pushUserToPerson(data.sender)
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private fun showMessageNotification(data: PushMessage, avatars: NotificationAvatars) {
+        val sender = pushUserToPerson(data.sender, avatars)
+        val roomAvatar = avatars.load(data.roomAvatar)
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val notifID = data.roomID.hashCode()
         val messagingStyle = (manager.activeNotifications.lastOrNull { it.tag == null && it.id == notifID }?.let {
             MessagingStyle.extractMessagingStyleFromNotification(it.notification)
-        } ?: MessagingStyle(pushUserToPerson(data.self)))
+        } ?: MessagingStyle(pushUserToPerson(data.self, avatars)))
             .setConversationTitle(if (!data.isDM) data.roomName else null)
             .setGroupConversation(!data.isDM)
             .addMessage(MessagingStyle.Message(data.text, data.timestamp, sender))
@@ -127,20 +141,35 @@ class MessagingService : FirebaseMessagingService() {
 
         val builder = NotificationCompat.Builder(this, channelID)
             .setSmallIcon(R.drawable.matrix)
+            .setLargeIcon(roomAvatar)
             .setStyle(messagingStyle)
             .setWhen(data.timestamp)
             .setAutoCancel(true)
             .setContentIntent(openRoomIntent)
             .addAction(replyAction)
-        with(NotificationManagerCompat.from(this)) {
-            if (ActivityCompat.checkSelfPermission(
-                    this@MessagingService,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
+        try {
+            val shortcut = ShortcutInfoCompat.Builder(this, data.roomID)
+                .setShortLabel(data.roomName.ifBlank { data.roomID })
+                .setIsConversation()
+                .setPerson(sender)
+                .setIntent(Intent(this, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    setData("matrix:roomid/${data.roomID.substring(1)}".toUri())
+                })
+                .setIcon(if (roomAvatar != null) {
+                    IconCompat.createWithBitmap(roomAvatar)
+                } else if (data.isDM && sender.icon != null) {
+                    sender.icon
+                } else {
+                    null
+                })
+                .build()
+            if (ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)) {
+                builder.setShortcutInfo(shortcut)
             }
-            notify(notifID.hashCode(), builder.build())
+        } catch (e: Exception) {
+            Log.w(LOGTAG, "Failed to publish conversation shortcut", e)
         }
+        NotificationManagerCompat.from(this).notify(notifID.hashCode(), builder.build())
     }
 }
