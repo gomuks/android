@@ -137,7 +137,23 @@ class MessagingService : FirebaseMessagingService() {
             RemoteInput.Builder(ReplyReceiver.KEY_REPLY)
                 .setLabel(resources.getString(R.string.reply))
                 .build(),
-        ).build()
+        ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).build()
+
+        val markReadAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_mark_read,
+            getString(R.string.mark_read),
+            PendingIntent.getBroadcast(
+                this,
+                notifID,
+                Intent(this, MarkReadReceiver::class.java).apply {
+                    setAction(MarkReadReceiver.INTENT_ACTION)
+                    setData("matrix:roomid/${data.roomID.substring(1)}/e/${data.eventID.substring(1)}?action=mark_read".toUri())
+                    putExtra(MarkReadReceiver.KEY_ROOM_ID, data.roomID)
+                    putExtra(MarkReadReceiver.KEY_EVENT_ID, data.eventID)
+                },
+                PendingIntent.FLAG_IMMUTABLE,
+            ),
+        ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).build()
 
         val builder = NotificationCompat.Builder(this, channelID)
             .setSmallIcon(R.drawable.matrix)
@@ -147,6 +163,7 @@ class MessagingService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(openRoomIntent)
             .addAction(replyAction)
+            .addAction(markReadAction)
         try {
             val shortcut = ShortcutInfoCompat.Builder(this, data.roomID)
                 .setShortLabel(data.roomName.ifBlank { data.roomID })

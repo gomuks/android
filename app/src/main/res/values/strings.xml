@@ -52,4 +52,5 @@
     <string name="reply">Reply</string>
     <string name="reply_sent">Reply sent</string>
     <string name="reply_failed">Failed to send reply</string>
+    <string name="mark_read">Mark read</string>
 </resources>

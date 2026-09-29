@@ -65,6 +65,9 @@
         <receiver
             android:name=".ReplyReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".MarkReadReceiver"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
