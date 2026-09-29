@@ -109,20 +109,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    internal fun getCredentials(): Triple<String, String, String>? {
-        val serverURL = sharedPref.getString(getString(R.string.server_url_key), null)
-        val username = sharedPref.getString(getString(R.string.username_key), null)
-        val encPassword = sharedPref.getString(getString(R.string.password_key), null)
-        if (serverURL == null || username == null || encPassword == null) {
-            return null
-        }
-        try {
-            return Triple(serverURL, username, prefEnc.decrypt(encPassword))
-        } catch (e: Exception) {
-            Log.e(LOGTAG, "Failed to decrypt password", e)
-            return null
-        }
-    }
+    internal fun getCredentials(): Triple<String, String, String>? = readCredentials(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

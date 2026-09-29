@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.MessagingStyle
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
+import androidx.core.app.RemoteInput
 import androidx.core.net.toUri
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -93,7 +94,8 @@ class MessagingService : FirebaseMessagingService() {
         } else {
             SILENT_NOTIFICATION_CHANNEL_ID
         }
-        val pendingIntent = PendingIntent.getActivity(
+
+        val openRoomIntent = PendingIntent.getActivity(
             this,
             0,
             Intent(this, MainActivity::class.java).apply {
@@ -102,12 +104,33 @@ class MessagingService : FirebaseMessagingService() {
             },
             PendingIntent.FLAG_IMMUTABLE,
         )
+
+        val replyAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_reply,
+            getString(R.string.reply),
+            PendingIntent.getBroadcast(
+                this,
+                notifID,
+                Intent(this, ReplyReceiver::class.java).apply {
+                    setAction(ReplyReceiver.INTENT_ACTION)
+                    setData("matrix:roomid/${data.roomID.substring(1)}/e/${data.eventID.substring(1)}?action=reply".toUri())
+                    putExtra(ReplyReceiver.KEY_ROOM_ID, data.roomID)
+                },
+                PendingIntent.FLAG_MUTABLE,
+            ),
+        ).addRemoteInput(
+            RemoteInput.Builder(ReplyReceiver.KEY_REPLY)
+                .setLabel(resources.getString(R.string.reply))
+                .build(),
+        ).build()
+
         val builder = NotificationCompat.Builder(this, channelID)
             .setSmallIcon(R.drawable.matrix)
             .setStyle(messagingStyle)
             .setWhen(data.timestamp)
             .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(openRoomIntent)
+            .addAction(replyAction)
         with(NotificationManagerCompat.from(this)) {
             if (ActivityCompat.checkSelfPermission(
                     this@MessagingService,
