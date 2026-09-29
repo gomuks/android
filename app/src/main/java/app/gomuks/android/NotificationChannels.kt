@@ -3,6 +3,7 @@ package app.gomuks.android
 import android.content.Context
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 
 internal const val SILENT_NOTIFICATION_CHANNEL_ID = "silent_notification"
 internal const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_notification"
@@ -20,7 +21,7 @@ fun createNotificationChannels(context: Context) {
             .setDescription(context.getString(R.string.notification_channel_silent))
             .setSound(null, null)
             .setLightsEnabled(true)
-            .setLightColor(R.color.primary_color)
+            .setLightColor(ContextCompat.getColor(context, R.color.primary_color))
             .build()
     )
 
@@ -33,7 +34,7 @@ fun createNotificationChannels(context: Context) {
             .setDescription(context.getString(R.string.notification_channel_noisy))
             .setVibrationEnabled(true)
             .setLightsEnabled(true)
-            .setLightColor(R.color.primary_color)
+            .setLightColor(ContextCompat.getColor(context, R.color.primary_color))
             .build()
     )
 
@@ -46,7 +47,7 @@ fun createNotificationChannels(context: Context) {
             .setDescription(context.getString(R.string.notification_channel_error))
             .setVibrationEnabled(true)
             .setLightsEnabled(true)
-            .setLightColor(R.color.primary_color)
+            .setLightColor(ContextCompat.getColor(context, R.color.primary_color))
             .build()
     )
 
