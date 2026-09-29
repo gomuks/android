@@ -168,7 +168,7 @@ class MessagingService : FirebaseMessagingService() {
             val shortcut = ShortcutInfoCompat.Builder(this, data.roomID)
                 .setShortLabel(data.roomName.ifBlank { data.roomID })
                 .setIsConversation()
-                .setPerson(sender)
+                .apply { if (data.isDM) setPerson(sender) }
                 .setIntent(Intent(this, MainActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     setData("matrix:roomid/${data.roomID.substring(1)}".toUri())
@@ -187,6 +187,6 @@ class MessagingService : FirebaseMessagingService() {
         } catch (e: Exception) {
             Log.w(LOGTAG, "Failed to publish conversation shortcut", e)
         }
-        NotificationManagerCompat.from(this).notify(notifID.hashCode(), builder.build())
+        NotificationManagerCompat.from(this).notify(notifID, builder.build())
     }
 }
