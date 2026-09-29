@@ -22,7 +22,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Credentials
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -34,6 +33,7 @@ class ReplyReceiver : BroadcastReceiver() {
         const val INTENT_ACTION = "app.gomuks.android.REPLY"
         const val KEY_REPLY = "key_reply"
         const val KEY_ROOM_ID = "room_id"
+        const val KEY_ROOM_NAME = "room_name"
         const val KEY_START_TS = "start_ts"
         const val KEY_TXN_ID = "txn_id"
     }
@@ -42,6 +42,7 @@ class ReplyReceiver : BroadcastReceiver() {
         if (intent.action != INTENT_ACTION) return
 
         val roomID = intent.getStringExtra(KEY_ROOM_ID) ?: return
+        val roomName = intent.getStringExtra(KEY_ROOM_NAME) ?: return
         val text = RemoteInput.getResultsFromIntent(intent)
             ?.getCharSequence(KEY_REPLY)
             ?.toString()
@@ -50,6 +51,7 @@ class ReplyReceiver : BroadcastReceiver() {
         val work = OneTimeWorkRequestBuilder<ReplyWorker>()
             .setInputData(workDataOf(
                 KEY_ROOM_ID to roomID,
+                KEY_ROOM_NAME to roomName,
                 KEY_REPLY to text,
                 KEY_TXN_ID to UUID.randomUUID().toString(),
                 KEY_START_TS to System.currentTimeMillis().toString(),
@@ -74,6 +76,8 @@ class ReplyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val roomID = inputData.getString(ReplyReceiver.KEY_ROOM_ID)
             ?: return@withContext Result.failure()
+        val roomName = inputData.getString(ReplyReceiver.KEY_ROOM_NAME)
+            ?: return@withContext Result.failure()
         val text = inputData.getString(ReplyReceiver.KEY_REPLY)?.takeIf { it.isNotBlank() }
             ?: return@withContext Result.failure()
         val txnID = inputData.getString(ReplyReceiver.KEY_TXN_ID)
@@ -81,25 +85,25 @@ class ReplyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val startTS = inputData.getString(ReplyReceiver.KEY_START_TS)
             ?: return@withContext Result.failure()
 
-        val sent = try {
+        val errorMessage = try {
             sendMessage(roomID, text, txnID, startTS)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Log.e(LOGTAG, "Failed to send reply", e)
-            false
+            e.toString()
         }
 
-        updateNotification(roomID, text, sent)
-        if (sent) {
+        updateNotification(roomID, roomName, text, errorMessage)
+        if (errorMessage == null) {
             Result.success()
         } else {
             Result.failure()
         }
     }
 
-    private fun sendMessage(roomID: String, text: String, txnID: String, startTS: String): Boolean {
-        val credentials = readCredentials(applicationContext) ?: return false
+    private fun sendMessage(roomID: String, text: String, txnID: String, startTS: String): String? {
+        val credentials = readCredentials(applicationContext) ?: return "Missing credentials"
         val (serverURL, username, password) = credentials
         val baseURL = serverURL.toHttpUrl()
         val reqURL = baseURL.newBuilder()
@@ -122,23 +126,47 @@ class ReplyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         return httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 Log.w(LOGTAG, "Reply request failed with HTTP ${response.code}")
+                "HTTP ${response.code}"
+            } else {
+                null
             }
-            response.isSuccessful
         }
     }
 
-    private fun updateNotification(roomID: String, text: String, sent: Boolean) {
+    private fun updateNotification(roomID: String, roomName: String, text: String, errorMessage: String?) {
         val context = applicationContext
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             return
         }
         try {
             val manager = context.getSystemService(NotificationManager::class.java)
-            val active = manager.activeNotifications.lastOrNull { it.id == roomID.hashCode() }
+            if (errorMessage != null) {
+                createNotificationChannels(context)
+                val failure = Notification.Builder(context, ERROR_NOTIFICATION_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.matrix)
+                    .setSubText(context.getString(R.string.reply_failed))
+                    .setContentTitle("Message to $roomName couldn't be sent")
+                    .setStyle(Notification.BigTextStyle().bigText(errorMessage))
+                    .setAutoCancel(true)
+                    .setCategory(Notification.CATEGORY_ERROR)
+                    .build()
+                manager.notify("reply_failure:$id", roomID.hashCode(), failure)
+            }
+            val active = manager.activeNotifications.lastOrNull {
+                it.tag == null && it.id == roomID.hashCode()
+            }
                 ?: return
+            val previousReplies = active.notification.extras
+                .getCharSequenceArray(Notification.EXTRA_REMOTE_INPUT_HISTORY)
+                ?: emptyArray<CharSequence>()
+            val replyHistory = if (errorMessage == null) {
+                arrayOf<CharSequence>(text) + previousReplies
+            } else {
+                previousReplies
+            }
             val notification = Notification.Builder.recoverBuilder(context, active.notification)
-                .setRemoteInputHistory(arrayOf(text))
-                .setSubText(context.getString(if (sent) R.string.reply_sent else R.string.reply_failed))
+                .setRemoteInputHistory(replyHistory)
+                .setSubText(context.getString(if (errorMessage == null) R.string.reply_sent else R.string.reply_failed))
                 .setOnlyAlertOnce(true)
                 .build()
             manager.notify(active.tag, active.id, notification)

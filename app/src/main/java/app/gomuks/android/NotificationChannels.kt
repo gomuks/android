@@ -7,6 +7,7 @@ import androidx.core.app.NotificationManagerCompat
 internal const val SILENT_NOTIFICATION_CHANNEL_ID = "silent_notification"
 internal const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_notification"
 internal const val NOISY_NOTIFICATION_CHANNEL_ID = "noisy_notification"
+internal const val ERROR_NOTIFICATION_CHANNEL_ID = "error_notification"
 
 fun createNotificationChannels(context: Context) {
     val notificationManager = NotificationManagerCompat.from(context)
@@ -30,6 +31,19 @@ fun createNotificationChannels(context: Context) {
         )
             .setName(context.getString(R.string.notification_channel_noisy))
             .setDescription(context.getString(R.string.notification_channel_noisy))
+            .setVibrationEnabled(true)
+            .setLightsEnabled(true)
+            .setLightColor(R.color.primary_color)
+            .build()
+    )
+
+    notificationManager.createNotificationChannel(
+        NotificationChannelCompat.Builder(
+            ERROR_NOTIFICATION_CHANNEL_ID,
+            NotificationManagerCompat.IMPORTANCE_DEFAULT
+        )
+            .setName(context.getString(R.string.notification_channel_error))
+            .setDescription(context.getString(R.string.notification_channel_error))
             .setVibrationEnabled(true)
             .setLightsEnabled(true)
             .setLightColor(R.color.primary_color)

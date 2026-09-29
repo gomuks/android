@@ -83,7 +83,7 @@ class MessagingService : FirebaseMessagingService() {
         val sender = pushUserToPerson(data.sender)
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val notifID = data.roomID.hashCode()
-        val messagingStyle = (manager.activeNotifications.lastOrNull { it.id == notifID }?.let {
+        val messagingStyle = (manager.activeNotifications.lastOrNull { it.tag == null && it.id == notifID }?.let {
             MessagingStyle.extractMessagingStyleFromNotification(it.notification)
         } ?: MessagingStyle(pushUserToPerson(data.self)))
             .setConversationTitle(if (!data.isDM) data.roomName else null)
@@ -115,6 +115,7 @@ class MessagingService : FirebaseMessagingService() {
                     setAction(ReplyReceiver.INTENT_ACTION)
                     setData("matrix:roomid/${data.roomID.substring(1)}/e/${data.eventID.substring(1)}?action=reply".toUri())
                     putExtra(ReplyReceiver.KEY_ROOM_ID, data.roomID)
+                    putExtra(ReplyReceiver.KEY_ROOM_NAME, data.roomName)
                 },
                 PendingIntent.FLAG_MUTABLE,
             ),
