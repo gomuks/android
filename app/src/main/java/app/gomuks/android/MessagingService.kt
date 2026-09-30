@@ -24,7 +24,6 @@ import kotlinx.serialization.json.Json
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.IconCompat
 
 class MessagingService : FirebaseMessagingService() {
     companion object {
@@ -87,7 +86,7 @@ class MessagingService : FirebaseMessagingService() {
             .setKey(data.id)
             .setName(data.name)
             .setUri("matrix:u/${data.id.substring(1)}")
-            .setIcon(avatars.load(data.avatar)?.let { IconCompat.createWithBitmap(it) })
+            .setIcon(avatars.load(data.avatar))
             .build()
     }
 
@@ -157,7 +156,7 @@ class MessagingService : FirebaseMessagingService() {
 
         val builder = NotificationCompat.Builder(this, channelID)
             .setSmallIcon(R.drawable.matrix)
-            .setLargeIcon(roomAvatar)
+            .setLargeIcon(roomAvatar?.toIcon(this))
             .setStyle(messagingStyle)
             .setWhen(data.timestamp)
             .setAutoCancel(true)
@@ -174,7 +173,7 @@ class MessagingService : FirebaseMessagingService() {
                     setData("matrix:roomid/${data.roomID.substring(1)}".toUri())
                 })
                 .setIcon(if (roomAvatar != null) {
-                    IconCompat.createWithBitmap(roomAvatar)
+                    roomAvatar
                 } else if (data.isDM && sender.icon != null) {
                     sender.icon
                 } else {

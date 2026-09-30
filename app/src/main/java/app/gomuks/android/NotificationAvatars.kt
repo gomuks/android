@@ -3,9 +3,14 @@ package app.gomuks.android
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.util.Log
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
+import kotlin.math.ceil
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.IconCompat
 
 internal fun avatarRequest(serverURL: String?, path: String?, token: String?): Request? {
     if (path?.startsWith("_gomuks/media/") != true || token.isNullOrBlank() || serverURL.isNullOrBlank()) {
@@ -25,20 +30,36 @@ internal class NotificationAvatars(
     private val expiry: Long?,
 ) {
     private val client = avatarHTTPClient(context)
-    private val cache = mutableMapOf<String, Bitmap?>()
+    private val cache = mutableMapOf<String, IconCompat?>()
     private val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
 
-    fun load(path: String?): Bitmap? {
+    fun load(path: String?): IconCompat? {
         if (path.isNullOrBlank()) return null
         if (cache.containsKey(path)) return cache[path]
-        val bitmap = try {
-            download(path)
+        val icon = try {
+            download(path)?.let { IconCompat.createWithAdaptiveBitmap(padForAdaptiveIcon(it)) }
         } catch (e: Exception) {
             Log.w("Gomuks/NotificationAvatars", "Avatar download failed: $e")
             null
         }
-        cache[path] = bitmap
-        return bitmap
+        cache[path] = icon
+        return icon
+    }
+
+    private fun padForAdaptiveIcon(bitmap: Bitmap): Bitmap {
+        val scale = 1f + 2f * AdaptiveIconDrawable.getExtraInsetFraction()
+        val padded = createBitmap(
+            ceil(bitmap.width * scale).toInt(),
+            ceil(bitmap.height * scale).toInt(),
+        )
+        padded.density = bitmap.density
+        Canvas(padded).drawBitmap(
+            bitmap,
+            (padded.width - bitmap.width) / 2f,
+            (padded.height - bitmap.height) / 2f,
+            null,
+        )
+        return padded
     }
 
     private fun download(path: String): Bitmap? {
