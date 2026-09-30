@@ -136,7 +136,9 @@ class MessagingService : FirebaseMessagingService() {
             RemoteInput.Builder(ReplyReceiver.KEY_REPLY)
                 .setLabel(resources.getString(R.string.reply))
                 .build(),
-        ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).build()
+        ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
+            .setShowsUserInterface(false)
+            .build()
 
         val markReadAction = NotificationCompat.Action.Builder(
             R.drawable.ic_mark_read,
@@ -152,7 +154,9 @@ class MessagingService : FirebaseMessagingService() {
                 },
                 PendingIntent.FLAG_IMMUTABLE,
             ),
-        ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).build()
+        ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
+            .setShowsUserInterface(false)
+            .build()
 
         val builder = NotificationCompat.Builder(this, channelID)
             .setSmallIcon(R.drawable.matrix)
