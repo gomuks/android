@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.util.Log
 import okhttp3.Request
@@ -30,6 +31,8 @@ internal class NotificationAvatars(
     private val expiry: Long?,
 ) {
     private val client = avatarHTTPClient(context)
+    private val backgroundColor =
+        if (context.resources.configuration.isNightModeActive) Color.BLACK else Color.WHITE
     private val cache = mutableMapOf<String, IconCompat?>()
     private val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
 
@@ -53,12 +56,15 @@ internal class NotificationAvatars(
             ceil(bitmap.height * scale).toInt(),
         )
         padded.density = bitmap.density
-        Canvas(padded).drawBitmap(
-            bitmap,
-            (padded.width - bitmap.width) / 2f,
-            (padded.height - bitmap.height) / 2f,
-            null,
-        )
+        Canvas(padded).apply {
+            drawColor(backgroundColor)
+            drawBitmap(
+                bitmap,
+                (padded.width - bitmap.width) / 2f,
+                (padded.height - bitmap.height) / 2f,
+                null,
+            )
+        }
         return padded
     }
 
