@@ -1,6 +1,7 @@
 package app.gomuks.android
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -191,6 +192,7 @@ class MessagingService : FirebaseMessagingService() {
             .setContentIntent(openRoomIntent)
             .addAction(replyAction)
             .addAction(markReadAction)
+            .setCategory(Notification.CATEGORY_MESSAGE)
         try {
             val shortcut = buildShortcut(
                 this,

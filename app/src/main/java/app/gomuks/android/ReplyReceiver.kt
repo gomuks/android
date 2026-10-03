@@ -166,6 +166,7 @@ class ReplyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                 .setRemoteInputHistory(replyHistory)
                 .setSubText(context.getString(if (errorMessage == null) R.string.reply_sent else R.string.reply_failed))
                 .setOnlyAlertOnce(true)
+                .setCategory(Notification.CATEGORY_MESSAGE)
                 .build()
             manager.notify(active.tag, active.id, notification)
         } catch (e: Exception) {
