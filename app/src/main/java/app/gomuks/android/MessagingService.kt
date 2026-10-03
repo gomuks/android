@@ -29,6 +29,7 @@ import androidx.core.graphics.drawable.IconCompat
 class MessagingService : FirebaseMessagingService() {
     companion object {
         private const val LOGTAG = "Gomuks/MessagingService"
+        private const val SHARE_TARGET_CATEGORY = "app.gomuks.android.SHARE_TARGET"
 
         internal fun pushUserToPerson(data: PushUser, avatars: NotificationAvatars): Person {
             return Person.Builder()
@@ -45,6 +46,7 @@ class MessagingService : FirebaseMessagingService() {
                 .setShortLabel(roomName)
                 .setIsConversation()
                 .setLongLived(true)
+                .setCategories(setOf(SHARE_TARGET_CATEGORY))
                 .apply { if (dmUser != null) setPerson(dmUser) }
                 .setIntent(Intent(context, MainActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
