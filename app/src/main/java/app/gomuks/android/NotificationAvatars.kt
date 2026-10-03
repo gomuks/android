@@ -38,6 +38,9 @@ internal class NotificationAvatars(
     private val token: String?,
     private val expiry: Long?,
 ) {
+    companion object {
+        private const val LOGTAG = "Gomuks/NotificationAvatars"
+    }
     private val client = avatarHTTPClient(context)
     private val backgroundColor =
         if (context.resources.configuration.isNightModeActive) Color.BLACK else Color.WHITE
@@ -51,7 +54,7 @@ internal class NotificationAvatars(
             val downloaded = download(path, true) ?: download(path, false)
             downloaded?.let { IconCompat.createWithAdaptiveBitmap(padForAdaptiveIcon(it)) }
         } catch (e: Exception) {
-            Log.w("Gomuks/NotificationAvatars", "Avatar download failed: $e")
+            Log.w(LOGTAG, "Avatar download failed: $e")
             null
         }
         cache[path] = icon
@@ -85,9 +88,11 @@ internal class NotificationAvatars(
         if (remaining <= 0 && !cached) {
             return null
         }
-        val call = client.newCall(avatarRequest(serverURL, path, token, cached) ?: return null)
+        val request = avatarRequest(serverURL, path, token, cached) ?: return null
+        val call = client.newCall(request)
         if (!cached) {
             call.timeout().timeout(remaining, TimeUnit.NANOSECONDS)
+            Log.d(LOGTAG, "Downloading ${request.url} from network (${remaining / 1_000_000} ms remaining)")
         }
         return call.execute().use { response ->
             val maxBytes = 1024 * 1024
@@ -96,11 +101,20 @@ internal class NotificationAvatars(
                 || response.body.contentType()?.subtype == "svg+xml"
                 || response.body.contentLength() > maxBytes
             ) {
+                if (!cached) {
+                    Log.d(LOGTAG, "Response for ${request.url} failed (status=${response.code}, size=${response.body.contentLength()}, type=${response.body.contentType()})")
+                }
                 return null
             }
             val bytes = response.body.byteStream().readNBytes(maxBytes + 1)
             if (bytes.size > maxBytes) {
+                Log.d(LOGTAG, "Response for ${request.url} (cached: $cached) was too big while reading")
                 return null
+            }
+            if (cached) {
+                Log.d(LOGTAG, "Downloaded ${request.url} from cache (${bytes.size} bytes)")
+            } else {
+                Log.d(LOGTAG, "Downloaded ${request.url} from network (${bytes.size} bytes)")
             }
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         }
