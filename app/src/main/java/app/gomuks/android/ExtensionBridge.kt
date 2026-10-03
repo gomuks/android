@@ -7,6 +7,14 @@ import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
 import android.view.HapticFeedbackConstants
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 import org.json.JSONObject
 import org.mozilla.geckoview.WebExtension
 import kotlin.time.Duration.Companion.hours
@@ -93,6 +101,31 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
                     }
                     Log.i(LOGTAG, "Vibrate $feedbackConstant")
                     activity.view.performHapticFeedback(feedbackConstant)
+                }
+
+                "message_sent" -> {
+                    val data = try {
+                        Json.decodeFromString<SentMessage>(message.toString())
+                    } catch (e: Exception) {
+                        Log.e(LOGTAG, "Failed to parse $message as sent message", e)
+                        return
+                    }
+                    activity.lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val avatars = NotificationAvatars(activity, getServerURL(activity), data.imageAuth, null)
+                            ShortcutManagerCompat.pushDynamicShortcut(activity, MessagingService.buildShortcut(
+                                activity,
+                                data.room.id,
+                                data.room.name,
+                                avatars.load(data.room.avatar),
+                                data.dmUser?.let { MessagingService.pushUserToPerson(it, avatars) },
+                            ))
+                            ShortcutManagerCompat.reportShortcutUsed(activity, data.room.id)
+                            Log.d(LOGTAG, "Reported use of shortcut ${data.room.id}")
+                        } catch (e: Exception) {
+                            Log.w(LOGTAG, "Failed to publish conversation shortcut for sent message", e)
+                        }
+                    }
                 }
 
                 else -> Log.d(LOGTAG, "Unknown web command $evtType")

@@ -20,7 +20,12 @@ internal fun avatarRequest(serverURL: String?, path: String?, token: String?, ca
     }
     val url = serverURLBuilder(serverURL).build().resolve(path) ?: return null
     val builder = Request.Builder()
-        .url(url.newBuilder().setQueryParameter("thumbnail", "avatar").build())
+        .url(url.newBuilder()
+            .query(null)
+            .setQueryParameter("encrypted", "false")
+            .setQueryParameter("fallback", url.queryParameter("fallback"))
+            .setQueryParameter("thumbnail", "avatar")
+            .build())
     if (cached) {
         return builder
             .cacheControl(CacheControl.FORCE_CACHE)

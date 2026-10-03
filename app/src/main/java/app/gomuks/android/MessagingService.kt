@@ -24,10 +24,41 @@ import kotlinx.serialization.json.Json
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 
 class MessagingService : FirebaseMessagingService() {
     companion object {
         private const val LOGTAG = "Gomuks/MessagingService"
+
+        internal fun pushUserToPerson(data: PushUser, avatars: NotificationAvatars): Person {
+            return Person.Builder()
+                .setKey(data.id)
+                .setName(data.name)
+                .setUri("matrix:u/${data.id.substring(1)}")
+                .setIcon(avatars.load(data.avatar))
+                .build()
+        }
+
+        internal fun buildShortcut(context: Context, roomID: String, roomName: String, roomAvatar: IconCompat?, dmUser: Person?): ShortcutInfoCompat {
+            Log.d(LOGTAG, "Building shortcut $roomID / $roomName")
+            return ShortcutInfoCompat.Builder(context, roomID)
+                .setShortLabel(roomName)
+                .setIsConversation()
+                .setLongLived(true)
+                .apply { if (dmUser != null) setPerson(dmUser) }
+                .setIntent(Intent(context, MainActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    setData("matrix:roomid/${roomID.substring(1)}".toUri())
+                })
+                .setIcon(if (roomAvatar != null) {
+                    roomAvatar
+                } else if (dmUser?.icon != null) {
+                    dmUser.icon
+                } else {
+                    null
+                })
+                .build()
+        }
     }
 
     override fun onNewToken(token: String) {
@@ -79,15 +110,6 @@ class MessagingService : FirebaseMessagingService() {
         data.messages?.forEach {
             showMessageNotification(it, avatars)
         }
-    }
-
-    private fun pushUserToPerson(data: PushUser, avatars: NotificationAvatars): Person {
-        return Person.Builder()
-            .setKey(data.id)
-            .setName(data.name)
-            .setUri("matrix:u/${data.id.substring(1)}")
-            .setIcon(avatars.load(data.avatar))
-            .build()
     }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
@@ -168,22 +190,13 @@ class MessagingService : FirebaseMessagingService() {
             .addAction(replyAction)
             .addAction(markReadAction)
         try {
-            val shortcut = ShortcutInfoCompat.Builder(this, data.roomID)
-                .setShortLabel(data.roomName.ifBlank { data.roomID })
-                .setIsConversation()
-                .apply { if (data.isDM) setPerson(sender) }
-                .setIntent(Intent(this, MainActivity::class.java).apply {
-                    action = Intent.ACTION_VIEW
-                    setData("matrix:roomid/${data.roomID.substring(1)}".toUri())
-                })
-                .setIcon(if (roomAvatar != null) {
-                    roomAvatar
-                } else if (data.isDM && sender.icon != null) {
-                    sender.icon
-                } else {
-                    null
-                })
-                .build()
+            val shortcut = buildShortcut(
+                this,
+                data.roomID,
+                data.roomName,
+                roomAvatar,
+                if (data.isDM) sender else null,
+            )
             if (ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)) {
                 builder.setShortcutInfo(shortcut)
             }

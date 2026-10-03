@@ -1,9 +1,13 @@
 package app.gomuks.android
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 
 @Serializable
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
 data class PushData(
     @SerialName("dismiss") val dismiss: List<PushDismiss>? = null,
     @SerialName("messages") val messages: List<PushMessage>? = null,
@@ -12,11 +16,15 @@ data class PushData(
 )
 
 @Serializable
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
 data class PushDismiss(
     @SerialName("room_id") val roomID: String,
 )
 
 @Serializable
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
 data class PushMessage(
     val timestamp: Long,
     @SerialName("event_id") val eventID: String,
@@ -38,8 +46,20 @@ data class PushMessage(
 )
 
 @Serializable
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
 data class PushUser(
     val id: String,
     val name: String,
     val avatar: String? = null,
+)
+
+@Serializable
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
+data class SentMessage(
+    val event: String,
+    val room: PushUser,
+    @SerialName("dm_user") val dmUser: PushUser? = null,
+    @SerialName("image_auth") val imageAuth: String? = null,
 )
