@@ -163,30 +163,34 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
         if (intent.action != Intent.ACTION_SEND) {
             return
         }
-        val uri = intent.clipData?.getItemAt(0)?.uri ?: return
-        if (uri.scheme != "content") {
-            Log.w(LOGTAG, "Ignoring non-content URI $uri")
-            return
-        }
-        val (name, size) = queryContent(uri)
-        val fileBytes = activity.contentResolver.openInputStream(uri).use { it?.readBytes() }
-        if (fileBytes == null) {
-            Log.w(LOGTAG, "Failed to read content URI $uri")
-            return
-        }
-        val encodedFile = Base64.encodeToString(fileBytes, Base64.NO_WRAP)
-        val mimeType = activity.contentResolver.getType(uri)
-        port.postMessage(
-            JSONObject(
-                mapOf(
-                    "type" to "share",
-                    "payload" to encodedFile,
-                    "name" to name,
-                    "size" to size,
-                    "mime_type" to mimeType,
-                )
-            )
+        val message = mutableMapOf<String, Any?>(
+            "type" to "share",
+            "room_id" to intent.getStringExtra(Intent.EXTRA_SHORTCUT_ID),
         )
-        Log.d(LOGTAG, "Sent share intent for $uri ($name, $size, $mimeType)")
+        val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.takeIf { it.isNotBlank() }
+        if (text != null) {
+            message["text"] = text
+        }
+        val uri = intent.clipData?.getItemAt(0)?.uri
+        if (uri != null) {
+            if (uri.scheme != "content") {
+                Log.w(LOGTAG, "Ignoring non-content URI $uri")
+                return
+            }
+            val (name, size) = queryContent(uri)
+            val fileBytes = activity.contentResolver.openInputStream(uri).use { it?.readBytes() }
+            if (fileBytes == null) {
+                Log.w(LOGTAG, "Failed to read content URI $uri")
+                return
+            }
+            message["payload"] = Base64.encodeToString(fileBytes, Base64.NO_WRAP)
+            message["mime_type"] = activity.contentResolver.getType(uri)
+            message["name"] = name
+            message["size"] = size
+        }
+        if (text != null || uri != null) {
+            port.postMessage(JSONObject(message))
+            Log.d(LOGTAG, "Sent share intent for $uri / $text")
+        }
     }
 }
