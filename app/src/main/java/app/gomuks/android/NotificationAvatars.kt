@@ -8,20 +8,28 @@ import android.graphics.Color
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.util.Log
 import okhttp3.Request
+import okhttp3.CacheControl
 import java.util.concurrent.TimeUnit
 import kotlin.math.ceil
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
 
-internal fun avatarRequest(serverURL: String?, path: String?, token: String?): Request? {
-    if (path?.startsWith("_gomuks/media/") != true || token.isNullOrBlank() || serverURL.isNullOrBlank()) {
+internal fun avatarRequest(serverURL: String?, path: String?, token: String?, cached: Boolean): Request? {
+    if (path?.startsWith("_gomuks/media/") != true || (token.isNullOrBlank() && !cached) || serverURL.isNullOrBlank()) {
         return null
     }
     val url = serverURLBuilder(serverURL).build().resolve(path) ?: return null
-    return Request.Builder()
+    val builder = Request.Builder()
         .url(url.newBuilder().setQueryParameter("thumbnail", "avatar").build())
-        .header("Authorization", "Image $token")
-        .build()
+    if (cached) {
+        return builder
+            .cacheControl(CacheControl.FORCE_CACHE)
+            .build()
+    } else {
+        return builder
+            .header("Authorization", "Image $token")
+            .build()
+    }
 }
 
 internal class NotificationAvatars(
@@ -40,7 +48,8 @@ internal class NotificationAvatars(
         if (path.isNullOrBlank()) return null
         if (cache.containsKey(path)) return cache[path]
         val icon = try {
-            download(path)?.let { IconCompat.createWithAdaptiveBitmap(padForAdaptiveIcon(it)) }
+            val downloaded = download(path, true) ?: download(path, false)
+            downloaded?.let { IconCompat.createWithAdaptiveBitmap(padForAdaptiveIcon(it)) }
         } catch (e: Exception) {
             Log.w("Gomuks/NotificationAvatars", "Avatar download failed: $e")
             null
@@ -68,16 +77,18 @@ internal class NotificationAvatars(
         return padded
     }
 
-    private fun download(path: String): Bitmap? {
-        if (expiry != null && expiry <= System.currentTimeMillis()) {
+    private fun download(path: String, cached: Boolean): Bitmap? {
+        if (expiry != null && expiry <= System.currentTimeMillis() && !cached) {
             return null
         }
         val remaining = deadline - System.nanoTime()
-        if (remaining <= 0) {
+        if (remaining <= 0 && !cached) {
             return null
         }
-        val call = client.newCall(avatarRequest(serverURL, path, token) ?: return null)
-        call.timeout().timeout(remaining, TimeUnit.NANOSECONDS)
+        val call = client.newCall(avatarRequest(serverURL, path, token, cached) ?: return null)
+        if (!cached) {
+            call.timeout().timeout(remaining, TimeUnit.NANOSECONDS)
+        }
         return call.execute().use { response ->
             val maxBytes = 1024 * 1024
             if (
