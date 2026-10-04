@@ -44,6 +44,7 @@ import java.io.File
 import java.util.UUID
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
 
 
 class MainActivity : ComponentActivity() {
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
     internal lateinit var view: GeckoView
     private lateinit var session: GeckoSession
     private var sessionState: GeckoSession.SessionState? = null
+    private var sessionRecoveryPending = false
 
     internal lateinit var sharedPref: SharedPreferences
     private lateinit var prefEnc: Encryption
@@ -186,6 +188,7 @@ class MainActivity : ComponentActivity() {
             null
         }
         if (parcel != null) {
+            sessionState = parcel
             session.restoreState(parcel)
             setContentView(view)
         } else if (!loadWeb()) {
@@ -199,7 +202,38 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Log.i(LOGTAG, "onStart")
+        recoverSessionIfNeeded()
         session.setActive(true)
+    }
+
+    internal fun onSessionProcessGone(affectedSession: GeckoSession) {
+        if (affectedSession !== session || isFinishing || isDestroyed) {
+            return
+        }
+        port = null
+        navigation.canGoBack = false
+        sessionRecoveryPending = true
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            recoverSessionIfNeeded()
+        }
+    }
+
+    private fun recoverSessionIfNeeded() {
+        if (!sessionRecoveryPending || isFinishing || isDestroyed) {
+            return
+        }
+        sessionRecoveryPending = false
+        Log.i(LOGTAG, "Recovering Gecko session (saved state: ${sessionState != null})")
+        view.releaseSession()
+        session.open(getRuntime(this))
+        view.setSession(session)
+        session.setActive(true)
+        val state = sessionState
+        if (state != null) {
+            session.restoreState(state)
+        } else {
+            getServerURL()?.let { session.loadUri(it) }
+        }
     }
 
     override fun onPause() {

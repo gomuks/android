@@ -26,6 +26,16 @@ class ContentDelegate(private val activity: MainActivity) : GeckoSession.Content
         private const val LOGTAG = "Gomuks/ContentDelegate"
     }
 
+    override fun onCrash(session: GeckoSession) {
+        Log.e(LOGTAG, "Gecko content process crashed")
+        activity.onSessionProcessGone(session)
+    }
+
+    override fun onKill(session: GeckoSession) {
+        Log.w(LOGTAG, "Gecko content process was killed")
+        activity.onSessionProcessGone(session)
+    }
+
     override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
         Log.d(LOGTAG, "Got external response ${response.uri}")
         downloadFile(response)
