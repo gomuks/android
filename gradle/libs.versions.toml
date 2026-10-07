@@ -1,6 +1,6 @@
 [versions]
 agp = "9.4.1"
-geckoviewBeta = "157.0.20260923115834"
+geckoviewBeta = "158.0.20261005090344"
 kotlin = "2.4.20"
 coreKtx = "1.19.1"
 junit = "4.13.2"
