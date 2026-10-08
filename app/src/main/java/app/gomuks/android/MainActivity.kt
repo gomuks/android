@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.setPadding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var session: GeckoSession
     private var sessionState: GeckoSession.SessionState? = null
     private var sessionRecoveryPending = false
+    private var isFullScreen = false
 
     internal lateinit var sharedPref: SharedPreferences
     private lateinit var prefEnc: Encryption
@@ -174,6 +176,10 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (isFullScreen) {
+                    session.exitFullScreen()
+                    return
+                }
                 if (navigation.canGoBack) {
                     session.goBack()
                     return
@@ -206,10 +212,26 @@ class MainActivity : ComponentActivity() {
         session.setActive(true)
     }
 
+    internal fun setFullScreen(fullScreen: Boolean) {
+        if (isFullScreen == fullScreen) {
+            return
+        }
+        isFullScreen = fullScreen
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        if (fullScreen) {
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+        }
+    }
+
     internal fun onSessionProcessGone(affectedSession: GeckoSession) {
         if (affectedSession !== session || isFinishing || isDestroyed) {
             return
         }
+        setFullScreen(false)
         port = null
         navigation.canGoBack = false
         sessionRecoveryPending = true

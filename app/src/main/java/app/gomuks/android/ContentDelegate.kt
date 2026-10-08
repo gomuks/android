@@ -36,6 +36,10 @@ class ContentDelegate(private val activity: MainActivity) : GeckoSession.Content
         activity.onSessionProcessGone(session)
     }
 
+    override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) {
+        activity.setFullScreen(fullScreen)
+    }
+
     override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
         Log.d(LOGTAG, "Got external response ${response.uri}")
         downloadFile(response)
