@@ -314,14 +314,14 @@ class MainActivity : ComponentActivity() {
     }
 
     fun onReady() {
-        if (intent.action == Intent.ACTION_SEND) {
+        if (intent.action == Intent.ACTION_SEND || intent.action == Intent.ACTION_SEND_MULTIPLE) {
             handleShareIntent(intent)
             intent.action = ""
         }
     }
 
     private fun handleShareIntent(intent: Intent) {
-        if (intent.action != Intent.ACTION_SEND) {
+        if (intent.action != Intent.ACTION_SEND && intent.action != Intent.ACTION_SEND_MULTIPLE) {
             return
         }
         if (port != null) {

@@ -192,8 +192,27 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
         }
     }
 
+    private fun readSharedFile(uri: Uri?): Map<String, Any?>? {
+        if (uri == null || uri.scheme != "content") {
+            Log.w(LOGTAG, "Ignoring non-content URI $uri")
+            return null
+        }
+        val (name, size) = queryContent(uri)
+        val fileBytes = activity.contentResolver.openInputStream(uri).use { it?.readBytes() }
+        if (fileBytes == null) {
+            Log.w(LOGTAG, "Failed to read content URI $uri")
+            return null
+        }
+        return mapOf(
+            "payload" to Base64.encodeToString(fileBytes, Base64.NO_WRAP),
+            "mime_type" to activity.contentResolver.getType(uri),
+            "name" to name,
+            "size" to size,
+        )
+    }
+
     fun share(port: WebExtension.Port, intent: Intent) {
-        if (intent.action != Intent.ACTION_SEND) {
+        if (intent.action != Intent.ACTION_SEND && intent.action != Intent.ACTION_SEND_MULTIPLE) {
             return
         }
         val message = mutableMapOf<String, Any?>(
@@ -204,26 +223,15 @@ class PortDelegate(private val activity: MainActivity) : WebExtension.PortDelega
         if (text != null) {
             message["text"] = text
         }
-        val uri = intent.clipData?.getItemAt(0)?.uri
-        if (uri != null) {
-            if (uri.scheme != "content") {
-                Log.w(LOGTAG, "Ignoring non-content URI $uri")
-                return
-            }
-            val (name, size) = queryContent(uri)
-            val fileBytes = activity.contentResolver.openInputStream(uri).use { it?.readBytes() }
-            if (fileBytes == null) {
-                Log.w(LOGTAG, "Failed to read content URI $uri")
-                return
-            }
-            message["payload"] = Base64.encodeToString(fileBytes, Base64.NO_WRAP)
-            message["mime_type"] = activity.contentResolver.getType(uri)
-            message["name"] = name
-            message["size"] = size
+        val files = intent.clipData?.let { clip ->
+            (0 until clip.itemCount).mapNotNull { readSharedFile(clip.getItemAt(it)?.uri) }
         }
-        if (text != null || uri != null) {
+        if (!files.isNullOrEmpty()) {
+            message["files"] = files
+        }
+        if (text != null || !files.isNullOrEmpty()) {
             port.postMessage(JSONObject(message))
-            Log.d(LOGTAG, "Sent share intent for $uri / $text")
+            Log.d(LOGTAG, "Sent share intent for ${files?.size} files / $text")
         }
     }
 }
