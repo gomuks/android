@@ -77,24 +77,25 @@ class MessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        Log.i(LOGTAG, "Received push notification ${message.messageId} with priority ${message.priority}, sent at ${message.sentTime} (${System.currentTimeMillis() - message.sentTime} ms ago), ttl=${message.ttl})")
         val pushEncKey = getExistingPushEncryptionKey(this)
         if (pushEncKey == null) {
-            Log.e(LOGTAG, "No push encryption key found to handle $message")
+            Log.e(LOGTAG, "No push encryption key found to handle ${message.messageId}")
             return
         }
         val decryptedPayload: String = try {
             Encryption.fromPlainKey(pushEncKey).decrypt(message.data.getValue("payload"))
         } catch (e: Exception) {
-            Log.e(LOGTAG, "Failed to decrypt $message", e)
+            Log.e(LOGTAG, "Failed to decrypt ${message.messageId}", e)
             return
         }
         val data = try {
             Json.decodeFromString<PushData>(decryptedPayload)
         } catch (e: Exception) {
-            Log.e(LOGTAG, "Failed to parse $decryptedPayload as JSON", e)
+            Log.e(LOGTAG, "Failed to parse $decryptedPayload as JSON for ${message.messageId}", e)
             return
         }
-        Log.i(LOGTAG, "Decrypted payload: $data")
+        Log.d(LOGTAG, "Decrypted payload for ${message.messageId}: $data")
         if (!data.dismiss.isNullOrEmpty()) {
             with(NotificationManagerCompat.from(this)) {
                 for (dismiss in data.dismiss) {
@@ -113,6 +114,7 @@ class MessagingService : FirebaseMessagingService() {
         data.messages?.forEach {
             showMessageNotification(it, avatars)
         }
+        Log.i(LOGTAG, "Finished processing ${message.messageId} with ${data.messages?.size ?: 0} messages and ${data.dismiss?.size ?: 0} dismissals")
     }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
