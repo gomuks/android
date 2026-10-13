@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">gomuks</string>
 
-    <string name="server_url">Server URL</string>
+    <string name="login_header">Enter your gomuks backend credentials</string>
+    <string name="server_url">Backend URL</string>
     <string name="connect">Connect</string>
     <string name="url_app_chooser_title">Which app to open link in?</string>
     <string name="server_load_error">Failed to load server</string>

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -410,6 +411,7 @@ class MainActivity : ComponentActivity() {
         var serverURL by remember { mutableStateOf(initialURL) }
         var username by remember { mutableStateOf(initialUsername) }
         var password by remember { mutableStateOf(initialPassword) }
+        var localError by remember { mutableStateOf("") }
 
         Column(
             modifier = Modifier
@@ -418,6 +420,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            BasicText(text=getString(R.string.login_header))
             TextField(
                 value = serverURL,
                 onValueChange = { serverURL = it },
@@ -436,12 +439,22 @@ class MainActivity : ComponentActivity() {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
             Button(onClick = {
+                if (serverURL == "") {
+                    localError = "Missing backend URL"
+                    return@Button
+                }
+                localError = ""
                 setCredentials(serverURL, username, password)
                 loadWeb()
             }) {
                 Text(getString(R.string.connect))
             }
-            if (error != null) {
+            if (localError != "") {
+                Text(
+                    text = localError,
+                    modifier = Modifier.padding(16.dp)
+                )
+            } else if (error != null) {
                 Text(
                     text = error,
                     modifier = Modifier.padding(16.dp)
