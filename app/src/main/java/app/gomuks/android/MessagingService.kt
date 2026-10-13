@@ -77,7 +77,7 @@ class MessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        Log.i(LOGTAG, "Received push notification ${message.messageId} with priority ${message.priority}, sent at ${message.sentTime} (${System.currentTimeMillis() - message.sentTime} ms ago), ttl=${message.ttl})")
+        Log.i(LOGTAG, "Received push notification ${message.messageId} with priority ${message.priority}, sent at ${message.sentTime} (${System.currentTimeMillis() - message.sentTime} ms ago), ttl=${message.ttl}")
         val pushEncKey = getExistingPushEncryptionKey(this)
         if (pushEncKey == null) {
             Log.e(LOGTAG, "No push encryption key found to handle ${message.messageId}")
